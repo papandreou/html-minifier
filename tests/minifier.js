@@ -3245,3 +3245,29 @@ QUnit.test('tests from PHPTAL', function(assert) {
     }), tokens[0]);
   });
 });
+
+QUnit.test('canTrimWhitespace hook', function(assert) {
+  var input = '<div class="doNotTrimWhitespace"> foo  bar </div>';
+  var output = '<div class="doNotTrimWhitespace"> foo  bar </div>';
+
+  function canTrimWhitespace(tagName, attrs, defaultFn) {
+    if ((attrs || []).some(function(attr) { return attr.name === 'class' && attr.value === 'doNotTrimWhitespace'; })) {
+      return false;
+    }
+    return defaultFn(tagName, attrs);
+  }
+  assert.equal(minify(input, {
+    trimWhitespace: true,
+    canTrimWhitespace: canTrimWhitespace
+  }), output);
+
+  // Regression test: Previously the first </div> would clear the internal stackNoTrimWhitespace,
+  // so that 'foo  bar' would be turned into 'foo bar'
+  input = '<div class="doNotTrimWhitespace"><div></div> foo bar </div>';
+  output = '<div class="doNotTrimWhitespace"><div></div> foo bar </div>';
+
+  assert.equal(minify(input, {
+    trimWhitespace: true,
+    canTrimWhitespace: canTrimWhitespace
+  }), output);
+});
